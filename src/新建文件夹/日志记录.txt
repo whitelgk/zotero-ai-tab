@@ -1,0 +1,63 @@
+(3)(+0012131): itemTree.render(). Displaying Item Tree
+
+(3)(+0000866): [Zotero AI Chat Tab] History button clicked!
+
+(3)(+0000001): [Zotero AI Chat Tab] toggleHistoryPopup: Function called.
+
+(3)(+0000000): [Zotero AI Chat Tab] toggleHistoryPopup: Creating new popup.
+
+(3)(+0000000): [Zotero AI Chat Tab] toggleHistoryPopup: Popup position set (fixed) - top: 35px, left: 89px
+
+(3)(+0000000): [Zotero AI Chat Tab] toggleHistoryPopup: Found 6 sessions.
+
+(3)(+0000001): [Zotero AI Chat Tab] toggleHistoryPopup: Popup appended to document body.
+
+(3)(+0000006): [Zotero AI Chat Tab] toggleHistoryPopup: clickOutsideHandler added.
+
+(3)(+0001648): [Zotero AI Chat Tab] Delete button clicked for session: session_1745044463180_rmkb5
+
+(3)(+0000000): [Zotero AI Chat Tab] Attempting direct deletion for session: session_1745044463180_rmkb5
+
+(3)(+0000000): [Zotero AI Chat Tab] Deleted session (direct): session_1745044463180_rmkb5
+
+(3)(+0001151): [Zotero AI Chat Tab] History button clicked!
+
+(3)(+0000001): [Zotero AI Chat Tab] toggleHistoryPopup: Function called.
+
+(3)(+0000000): [Zotero AI Chat Tab] toggleHistoryPopup: Creating new popup.
+
+(3)(+0000001): [Zotero AI Chat Tab] toggleHistoryPopup: Popup position set (fixed) - top: 35px, left: 89px
+
+(3)(+0000000): [Zotero AI Chat Tab] toggleHistoryPopup: Found 5 sessions.
+
+(3)(+0000000): [Zotero AI Chat Tab] toggleHistoryPopup: Popup appended to document body.
+
+(3)(+0000006): [Zotero AI Chat Tab] toggleHistoryPopup: clickOutsideHandler added.
+
+(3)(+0001177): [Zotero AI Chat Tab] Delete button clicked for session: session_1745044454326_40tpg
+
+(3)(+0000001): [Zotero AI Chat Tab] Attempting direct deletion for session: session_1745044454326_40tpg
+
+(3)(+0000000): [Zotero AI Chat Tab] Deleted session (direct): session_1745044454326_40tpg
+
+(3)(+0000668): [Zotero AI Chat Tab] History button clicked!
+
+(3)(+0000000): [Zotero AI Chat Tab] toggleHistoryPopup: Function called.
+
+(3)(+0000000): [Zotero AI Chat Tab] toggleHistoryPopup: Creating new popup.
+
+(3)(+0000001): [Zotero AI Chat Tab] toggleHistoryPopup: Popup position set (fixed) - top: 35px, left: 89px
+
+(3)(+0000000): [Zotero AI Chat Tab] toggleHistoryPopup: Found 4 sessions.
+
+(3)(+0000000): [Zotero AI Chat Tab] toggleHistoryPopup: Popup appended to document body.
+
+(3)(+0000006): [Zotero AI Chat Tab] toggleHistoryPopup: clickOutsideHandler added.
+
+(3)(+0000913): [Zotero AI Chat Tab] Delete button clicked for session: session_1745044332565_32o4t
+
+(3)(+0000001): [Zotero AI Chat Tab] Attempting direct deletion for session: session_1745044332565_32o4t
+
+(3)(+0000000): [Zotero AI Chat Tab] Deleted session (direct): session_1745044332565_32o4t
+
+(3)(+0000675): itemTree.render(). Displaying Item Tree

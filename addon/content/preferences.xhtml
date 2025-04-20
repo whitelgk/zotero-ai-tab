@@ -1,0 +1,71 @@
+<!-- addon/content/preferences.xhtml -->
+<!-- 
+  此文件为 Zotero 插件的偏好设置界面，用于配置插件的各项参数。
+  主要功能包括：
+  1. 配置 API 密钥、端点、模型名称等基础信息。
+  2. 设置生成文本的随机性（Temperature）。
+  3. 自定义系统提示（System Prompt）。
+  4. 动态添加和管理自定义按钮。
+  文件结构遵循 XHTML 规范，使用 Zotero 提供的钩子函数实现交互逻辑。
+-->
+
+<linkset>
+  <html:link rel="localization" href="__addonRef__-preferences.ftl" />
+</linkset>
+<groupbox onload="Zotero.__addonInstance__.hooks.onPrefsEvent('load', { window });">
+  <label>
+    <html:h2 data-l10n-id="pref-title"></html:h2>
+  </label>
+
+  <!-- API Key 输入框 -->
+  <hbox align="center">
+    <label control="pref-__addonRef__-apiKey" data-l10n-id="pref-apiKey-label"></label>
+    <html:input type="password" id="pref-__addonRef__-apiKey" preference="apiKey" placeholder="Your API Key"
+      size="40" />
+  </hbox>
+
+  <!-- API Endpoint 输入框 -->
+  <hbox align="center">
+    <label control="pref-__addonRef__-apiEndpoint" data-l10n-id="pref-apiEndpoint-label"></label>
+    <html:input type="text" id="pref-__addonRef__-apiEndpoint" preference="apiEndpoint" size="40" />
+  </hbox>
+
+  <!-- Model Name 输入框 -->
+  <hbox align="center">
+    <label control="pref-__addonRef__-modelName" data-l10n-id="pref-modelName-label"></label>
+    <html:input type="text" id="pref-__addonRef__-modelName" preference="modelName" size="40" />
+  </hbox>
+
+  <!-- Temperature 输入框（范围0-2，步长0.1） -->
+  <hbox align="center">
+    <label control="pref-__addonRef__-temperature" data-l10n-id="pref-temperature-label"></label>
+    <html:input type="number" id="pref-__addonRef__-temperature" min="0" max="2" step="0.1" size="5" />
+  </hbox>
+
+  <!-- System Prompt 多行文本框 -->
+  <hbox align="start">
+    <label control="pref-__addonRef__-systemPrompt" data-l10n-id="pref-systemPrompt-label"></label>
+    <html:textarea id="pref-__addonRef__-systemPrompt" preference="systemPrompt" rows="3" cols="40"></html:textarea>
+  </hbox>
+
+  <!-- 自定义按钮设置区域 -->
+  <separator class="thin"/>
+  <html:h3>自定义按钮设置</html:h3>
+  <html:p style="font-size: 90%; color: #666; margin-top: 0;">在对话界面添加快捷操作按钮，一行最多4个</html:p>
+  
+  <!-- 按钮配置容器 -->
+  <vbox>
+    <html:div id="buttons-container" style="margin-bottom: 10px; border: 1px solid #ddd; padding: 10px; max-height: 200px; overflow-y: auto;">
+      <!-- 按钮配置将在这里动态生成 -->
+    </html:div>
+    <hbox>
+      <button id="add-button" label="添加新按钮" oncommand="Zotero.__addonInstance__.hooks.onPrefsEvent('addButton', { window });" />
+      <button id="save-buttons" label="保存按钮设置" oncommand="Zotero.__addonInstance__.hooks.onPrefsEvent('saveButtons', { window });" />
+    </hbox>
+  </vbox>
+
+</groupbox>
+<vbox>
+  <html:label data-l10n-id="pref-help"
+    data-l10n-args='{"time": "__buildTime__","name": "__addonName__","version":"__buildVersion__"}'></html:label>
+</vbox>

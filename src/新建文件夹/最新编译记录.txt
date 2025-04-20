@@ -1,0 +1,32 @@
+D:\Downloads\ZOTERO\zotero-ai-tab-test>npm start
+
+> zotero-plugin-template@1.0.0 start
+> zotero-plugin serve
+
+ ℹ Building version 1.0.0 to .scaffold/build at 2025-04-19 15:07:19 in development mode.
+   → Preparing static assets
+   → Bundling scripts
+X [ERROR] Unexpected "export"
+
+    src/modules/chatLogic.ts:571:0:
+      571 │ export function handleDestroy() {
+          ╵ ~~~~~~
+
+
+  ERROR  Error: Build failed with 1 error:
+src/modules/chatLogic.ts:571:0: ERROR: Unexpected "export"
+Error: Build failed with 1 error:
+src/modules/chatLogic.ts:571:0: ERROR: Unexpected "export"
+    at failureErrorWithLog (D:\Downloads\ZOTERO\zotero-ai-tab-test\node_modules\esbuild\lib\main.js:1477:15)
+    at D:\Downloads\ZOTERO\zotero-ai-tab-test\node_modules\esbuild\lib\main.js:946:25
+    at D:\Downloads\ZOTERO\zotero-ai-tab-test\node_modules\esbuild\lib\main.js:898:52
+    at buildResponseToResult (D:\Downloads\ZOTERO\zotero-ai-tab-test\node_modules\esbuild\lib\main.js:944:7)
+    at D:\Downloads\ZOTERO\zotero-ai-tab-test\node_modules\esbuild\lib\main.js:971:16
+    at responseCallbacks.<computed> (D:\Downloads\ZOTERO\zotero-ai-tab-test\node_modules\esbuild\lib\main.js:623:9)
+    at handleIncomingPacket (D:\Downloads\ZOTERO\zotero-ai-tab-test\node_modules\esbuild\lib\main.js:678:12)
+    at Socket.readFromStdout (D:\Downloads\ZOTERO\zotero-ai-tab-test\node_modules\esbuild\lib\main.js:601:7)
+    at Socket.emit (node:events:518:28)
+    at Socket.emit (node:domain:489:12)
+
+
+D:\Downloads\ZOTERO\zotero-ai-tab-test>
