@@ -86,7 +86,7 @@ export function registerReaderSection() {
                 ztoolkit.log(`Reader: onItemChange - tabType: ${tabType}, Item ID: ${item?.id}`);
                 // 可以在这里通知 chatLogic 清理状态或做其他处理
                 // chatLogic.handleItemChange(item); // 示例
-                setEnabled(tabType === "reader"); // 仅在阅读器中启用
+                setEnabled(tabType === "reader" || tabType === "library");
                 return true;
             },
             onDestroy: () => {
