@@ -1,6 +1,10 @@
 # zotero-ai-tab
+[![zotero target version](https://img.shields.io/badge/Zotero-7-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
+[![Using Zotero Plugin Template](https://img.shields.io/badge/Using-Zotero%20Plugin%20Template-blue?style=flat-square&logo=github)](https://github.com/windingwind/zotero-plugin-template)
+
 # 使用教程：
 默认设置界面：
+
 ![image](https://github.com/user-attachments/assets/b702d21f-9283-4853-8123-01c0a3d4717e)
 
  - 非常简单的设置界面，基本有手就行。
