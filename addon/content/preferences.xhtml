@@ -1,0 +1,132 @@
+<?xml-stylesheet href="chrome://global/skin/" type="text/css"?>
+<linkset>
+  <html:link rel="localization" href="__addonRef__-preferences.ftl" />
+</linkset>
+<prefpane id="prefpane-__addonRef__" label="AI Chat Settings"
+          onload="Zotero.__addonInstance__.hooks.onPrefsEvent('load', { window });">
+  <preferences>
+    <!-- Preferences 定义 
+    <preference id="pref-__addonRef__-apiKey" name="extensions.zotero.__addonRef__.apiKey" type="string"/>
+    <preference id="pref-__addonRef__-apiEndpoint" name="extensions.zotero.__addonRef__.apiEndpoint" type="string"/>
+    <preference id="pref-__addonRef__-systemPrompt" name="extensions.zotero.__addonRef__.systemPrompt" type="string"/>
+    <preference id="pref-__addonRef__-temperature" name="extensions.zotero.__addonRef__.temperature" type="int"/>
+    <preference id="pref-__addonRef__-apiKeyQwen" name="extensions.zotero.__addonRef__.apiKeyQwen" type="string"/>
+    <preference id="pref-__addonRef__-apiKeyDeepseek" name="extensions.zotero.__addonRef__.apiKeyDeepseek" type="string"/>
+    <preference id="pref-__addonRef__-currentModelId" name="extensions.zotero.__addonRef__.currentModelId" type="string"/>
+    
+    <preference id="pref-__addonRef__-embeddingApiKey" name="extensions.zotero.__addonRef__.embeddingApiKey" type="string"/>
+    <preference id="pref-__addonRef__-embeddingApiEndpoint" name="extensions.zotero.__addonRef__.embeddingApiEndpoint" type="string"/>
+    <preference id="pref-__addonRef__-embeddingModelName" name="extensions.zotero.__addonRef__.embeddingModelName" type="string"/>
+    <preference id="pref-__addonRef__-embeddingDimensions" name="extensions.zotero.__addonRef__.embeddingDimensions" type="int"/>
+    <preference id="pref-__addonRef__-customButtons" name="extensions.zotero.__addonRef__.customButtons" type="string"/>-->
+    <preference id="pref-__addonRef__-useRag" name="extensions.zotero.__addonRef__.useRag" type="bool"/>
+  </preferences>
+
+  <!-- 主 VBox 容器 -->
+  <vbox flex="1" style="overflow-y: auto; padding: 15px;">
+
+    <!-- 基础 API 设置 -->
+    <groupbox>
+      <caption label="基础 API 设置"/>
+      <vbox>
+        <hbox align="center" style="margin-bottom: 8px;">
+          <label control="pref-__addonRef__-apiKey-container" value="默认 API Key:" style="width: 140px;"/>
+          <html:div id="pref-__addonRef__-apiKey-container" xmlns:html="http://www.w3.org/1999/xhtml" style="flex: 1;"/>
+        </hbox>
+        <hbox align="center" style="margin-bottom: 8px;">
+          <label control="pref-__addonRef__-apiEndpoint-container" value="默认 API Endpoint:" style="width: 140px;"/>
+          <html:div id="pref-__addonRef__-apiEndpoint-container" xmlns:html="http://www.w3.org/1999/xhtml" style="flex: 1;"/>
+        </hbox>
+         <hbox align="center" style="margin-bottom: 8px;">
+          <label control="pref-__addonRef__-temperature-input-container" value="Temperature (0.0-2.0):" style="width: 140px;"/>
+          <html:div id="pref-__addonRef__-temperature-input-container" xmlns:html="http://www.w3.org/1999/xhtml" style="display: inline-block;"/>
+          <spacer flex="1"/>
+        </hbox>
+        <hbox align="start" style="margin-bottom: 8px;">
+          <label control="pref-__addonRef__-systemPrompt-container" value="系统提示词:" style="width: 140px;"/>
+          <html:div id="pref-__addonRef__-systemPrompt-container" xmlns:html="http://www.w3.org/1999/xhtml" style="flex: 1;"/>
+        </hbox>
+      </vbox>
+    </groupbox>
+
+    <!-- 模型选择 -->
+    <groupbox>
+        <caption label="模型选择"/>
+         <hbox align="center" style="margin-bottom: 8px;">
+          <label control="aiChatTab-model-select-container" value="当前对话模型:" style="width: 140px;"/>
+          <!-- HTML Select 的占位符 -->
+          <html:div id="aiChatTab-model-select-container" xmlns:html="http://www.w3.org/1999/xhtml" style="flex: 1;"/>
+          <!-- <spacer flex="1"/> --> <!-- Spacer 可能不再需要，因为 div 会 flex: 1 -->
+        </hbox>
+    </groupbox>
+    
+    <!-- 特定模型设置 -->
+    <groupbox>
+        <caption label="特定模型 API Keys (可选，覆盖默认设置)"/>
+         <vbox>
+            <hbox align="center" style="margin-bottom: 8px;">
+                <label control="pref-__addonRef__-apiKeyQwen-container" value="通义千问 API Key:" style="width: 140px;"/>
+                <html:div id="pref-__addonRef__-apiKeyQwen-container" xmlns:html="http://www.w3.org/1999/xhtml" style="flex: 1;"/>
+            </hbox>
+             <hbox align="center" style="margin-bottom: 8px;">
+                <label control="pref-__addonRef__-apiKeyDeepseek-container" value="Deepseek API Key:" style="width: 140px;"/>
+                <html:div id="pref-__addonRef__-apiKeyDeepseek-container" xmlns:html="http://www.w3.org/1999/xhtml" style="flex: 1;"/>
+            </hbox>
+            <!-- 添加其他模型的 Key 输入行 -->
+        </vbox>
+    </groupbox>
+
+    <!-- RAG / Embedding 设置 -->
+    <groupbox>
+        <caption label="RAG / Embedding 设置"/>
+        <!-- 保留 checkbox 的 preference，因为它通常工作良好 -->
+        <checkbox id="aiChatTab-useRag-checkbox" label="启用 RAG (基于文档问答)" style="margin-bottom: 8px;"/>
+        <vbox id="aiChatTab-embedding-settings" style="margin-left: 20px;">
+             <hbox align="center" style="margin-bottom: 8px;">
+                 <label control="pref-__addonRef__-embeddingApiKey-container" value="Embedding API Key:" style="width: 140px;"/>
+                 <!-- 移除 preference -->
+                 <html:div id="pref-__addonRef__-embeddingApiKey-container" xmlns:html="http://www.w3.org/1999/xhtml" style="flex: 1;"/>
+             </hbox>
+             <hbox align="center" style="margin-bottom: 8px;">
+                 <label control="pref-__addonRef__-embeddingApiEndpoint-container" value="Embedding Endpoint:" style="width: 140px;"/>
+                 <!-- 移除 preference -->
+                 <html:div id="pref-__addonRef__-embeddingApiEndpoint-container" xmlns:html="http://www.w3.org/1999/xhtml" style="flex: 1;"/>
+             </hbox>
+              <hbox align="center" style="margin-bottom: 8px;">
+                 <label control="pref-__addonRef__-embeddingModelName-container" value="Embedding 模型名称:" style="width: 140px;"/>
+                 <!-- 移除 preference -->
+                 <html:div id="pref-__addonRef__-embeddingModelName-container" xmlns:html="http://www.w3.org/1999/xhtml" style="flex: 1;"/>
+             </hbox>
+              <hbox align="center" style="margin-bottom: 8px;">
+                 <label control="pref-__addonRef__-embeddingDimensions-container" value="Embedding 维度 (可选):" style="width: 140px;"/>
+                 <!-- 移除 preference -->
+                 <html:div id="pref-__addonRef__-embeddingDimensions-container" xmlns:html="http://www.w3.org/1999/xhtml" style="flex: 1;"/>
+             </hbox>
+        </vbox>
+    </groupbox>
+
+    <!-- 自定义按钮设置区域 -->
+    <groupbox>
+      <caption label="自定义快捷按钮"/>
+      <description>在对话界面添加快捷操作按钮，一行最多4个</description>
+      <vbox flex="1">
+        <vbox id="buttons-container" flex="1" style="margin-bottom: 10px; border: 1px solid #ddd; padding: 10px; max-height: 200px; overflow-y: auto;">
+          <!-- 按钮配置将在这里动态生成 -->
+        </vbox>
+        <hbox>
+          <spacer flex="1"/>
+          <button id="add-button" label="添加按钮" oncommand="Zotero.__addonInstance__.hooks.onPrefsEvent('addButton', { window });"/>
+          <button id="save-buttons" label="保存按钮设置" oncommand="Zotero.__addonInstance__.hooks.onPrefsEvent('saveButtons', { window });"/>
+        </hbox>
+      </vbox>
+    </groupbox>
+
+    <!-- 帮助信息 -->
+    <vbox style="margin-top: 15px;">
+      <label data-l10n-id="pref-help"
+        data-l10n-args='{"time": "__buildTime__","name": "__addonName__","version":"__buildVersion__"}'/>
+    </vbox>
+
+  </vbox> <!-- 关闭主 VBox -->
+
+</prefpane>
