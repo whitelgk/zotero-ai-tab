@@ -17,23 +17,33 @@
     <html:h2 data-l10n-id="pref-title"></html:h2>
   </label>
 
+  <!-- +++ 新增：AI 配置方案选择区域 +++ -->
+  <hbox align="center" style="margin-bottom: 10px;">
+    <label value="配置方案:" control="ai-config-profile-select" style="margin-right: 5px;"/>
+    <html:select id="ai-config-profile-select" flex="1" onchange="Zotero.__addonInstance__.hooks.onPrefsEvent('profileSelectChange', { window, selectedName: this.value });">
+      <html:option value="" disabled="true">加载中...</html:option>
+    </html:select>
+    <button id="save-config-profile-button" label="保存当前配置" style="margin-left: 5px;" oncommand="Zotero.__addonInstance__.hooks.onPrefsEvent('saveCurrentProfile', { window });"/>
+    <button id="delete-config-profile-button" label="删除选中配置" style="margin-left: 5px;" oncommand="Zotero.__addonInstance__.hooks.onPrefsEvent('deleteSelectedProfile', { window });"/>
+  </hbox>
+  <!-- +++ 结束新增 +++ -->
+
   <!-- API Key 输入框 -->
   <hbox align="center">
     <label control="pref-__addonRef__-apiKey" data-l10n-id="pref-apiKey-label"></label>
-    <html:input type="password" id="pref-__addonRef__-apiKey" preference="apiKey" placeholder="Your API Key"
-      size="40" />
+    <html:input type="password" id="pref-__addonRef__-apiKey" placeholder="Your API Key" size="40" />
   </hbox>
 
   <!-- API Endpoint 输入框 -->
   <hbox align="center">
     <label control="pref-__addonRef__-apiEndpoint" data-l10n-id="pref-apiEndpoint-label"></label>
-    <html:input type="text" id="pref-__addonRef__-apiEndpoint" preference="apiEndpoint" size="40" />
+    <html:input type="text" id="pref-__addonRef__-apiEndpoint" size="40" />
   </hbox>
 
   <!-- Model Name 输入框 -->
   <hbox align="center">
     <label control="pref-__addonRef__-modelName" data-l10n-id="pref-modelName-label"></label>
-    <html:input type="text" id="pref-__addonRef__-modelName" preference="modelName" size="40" />
+    <html:input type="text" id="pref-__addonRef__-modelName" size="40" />
   </hbox>
 
   <!-- Temperature 输入框（范围0-2，步长0.1） -->
@@ -45,7 +55,7 @@
   <!-- System Prompt 多行文本框 -->
   <hbox align="start">
     <label control="pref-__addonRef__-systemPrompt" data-l10n-id="pref-systemPrompt-label"></label>
-    <html:textarea id="pref-__addonRef__-systemPrompt" preference="systemPrompt" rows="3" cols="40"></html:textarea>
+    <html:textarea id="pref-__addonRef__-systemPrompt" rows="3" cols="40"></html:textarea>
   </hbox>
 
   <!-- 自定义按钮设置区域 -->
