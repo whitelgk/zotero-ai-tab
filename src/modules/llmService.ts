@@ -1,5 +1,5 @@
 // src/modules/aiService.ts
-import { getAIChatConfig } from "../utils/prefs"; // 从偏好设置中获取 AI 配置
+import { getActiveAIConfig } from "../utils/prefs"; // 导入新的函数
 import { getString } from "../utils/locale"; // 用于本地化字符串
 
 // 定义聊天消息接口
@@ -24,10 +24,10 @@ interface AIResponseFormat {
 }
 
 // 文本分块接口（可用于分块处理文本）
-interface TextChunk {
+/*interface TextChunk {
     content: string; // 文本内容
     // 可添加其他元数据，如位置信息等
-}
+}*/
 
 /**
  * 向配置的 AI 服务发送消息并获取回复。
@@ -38,7 +38,7 @@ interface TextChunk {
 export async function getCompletion(messages: ChatMessage[]): Promise<string> {
     let config;
     try {
-        config = getAIChatConfig(); // 从偏好设置中获取 AI 配置
+        config = getActiveAIConfig(); // 从偏好设置中获取 AI 配置
         ztoolkit.log("getCompletion: AI Config obtained:", JSON.stringify(config));
     } catch (e) {
         const errorMsg = "Error getting AI configuration from preferences."; // 配置获取失败
