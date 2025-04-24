@@ -1,6 +1,15 @@
+// src/modules/preferenceScript.ts
 import { config } from "../../package.json";
 import { getString } from "../utils/locale";
-
+// --- 导入新的 prefs 函数和类型 ---
+import {
+  getAIConfigProfiles,
+  saveAIConfigProfiles,
+  getAIConfigByName,
+  AIConfigProfile,
+  AIConfigProfiles
+} from "../utils/prefs";
+// --- 结束导入 ---
 // 定义按钮配置接口
 interface ButtonConfig {
   id: string;
@@ -9,10 +18,15 @@ interface ButtonConfig {
   prompt: string;
 }
 
+// --- 全局变量存储当前窗口和文档引用 ---
+let prefsWindow: Window | null = null;
+let prefsDocument: Document | null = null;
+let addonRef: string | null = null; // 存储 addonRef
+
 export async function registerPrefsScripts(_window: Window) {
   // This function is called when the prefs window is opened
   // See addon/content/preferences.xhtml onpaneload
-  if (!addon.data.prefs) {
+  /*if (!addon.data.prefs) {
     addon.data.prefs = {
       window: _window,
       columns: [
@@ -44,14 +58,339 @@ export async function registerPrefsScripts(_window: Window) {
     };
   } else {
     addon.data.prefs.window = _window;
-  }
-  updatePrefsUI();
-  bindPrefEvents();
-  ButtonsConfig();
-  setupTemperatureControl();
+  }*/
+  // --- 调用新的初始化函数 ---
+  await loadAndPopulateConfigProfiles(); // 加载并填充配置方案下拉菜单
+  setupInputListeners(); // 设置输入框监听器（如果需要实时反馈）
+  ButtonsConfig(); // 加载自定义按钮配置 (保持不变)
+  // setupTemperatureControl(); // 温度控制逻辑将包含在 loadProfileIntoInputs 中
+  // bindPrefEvents(); // 旧的事件绑定可能不再需要
+  // updatePrefsUI(); // 旧的表格渲染不再需要
+  // --- 结束调用 ---
+
+  ztoolkit.log("Preference scripts registered and UI initialized.");
 }
 
-async function updatePrefsUI() {
+// --- 新增：加载并填充配置方案下拉菜单 ---
+async function loadAndPopulateConfigProfiles() {
+  if (!prefsDocument || !prefsWindow) {
+       ztoolkit.log("ERROR: Prefs document or window not available in loadAndPopulateConfigProfiles.");
+       return;
+  }
+  ztoolkit.log("Loading and populating AI config profiles..."); 
+
+  const selectElement = prefsDocument.getElementById("ai-config-profile-select") as HTMLSelectElement;
+  if (!selectElement) {
+      ztoolkit.log("ERROR: Profile select element not found.");
+      return;
+  }
+  selectElement.options.length = 0;
+
+  const profilesData = getAIConfigProfiles();
+  const profiles = profilesData.profiles;
+  const activeProfileName = profilesData.activeProfileName;
+  let activeIndex = -1; // 初始化为 -1
+
+  if (profiles.length === 0) {
+      // 没有配置时显示提示，并加载默认空值
+      const item = prefsDocument.createElement("option") as HTMLOptionElement;
+      item.textContent = "无配置 (请保存)"; // 使用 textContent
+      item.value = "";
+      item.disabled = true; // 设置 disabled 属性
+      selectElement.appendChild(item);
+      loadProfileIntoInputs(null); // 加载空/默认值
+      activeIndex = 0; // 即使是禁用项，索引也是 0
+      ztoolkit.log("No profiles found, displaying default.");
+  } else {
+      let activeIndex = 0;
+      profiles.forEach((profile, index) => {
+          const item = prefsDocument.createElement("option") as HTMLOptionElement;
+          item.textContent = profile.name; // 使用 textContent
+          item.value = profile.name;
+          selectElement.appendChild(item);
+          if (profile.name === activeProfileName) {
+              activeIndex = index; // 记录活动配置的索引
+          }
+      });
+
+      // 如果没有找到活动的，默认选中第一个
+      if (activeIndex === -1 && profiles.length > 0) {
+        activeIndex = 0;
+        // (可选) 更新存储中的 activeProfileName
+        // profilesData.activeProfileName = profiles[0].name;
+        // saveAIConfigProfiles(profilesData);
+    }
+
+      // 选中活动配置
+      //selectElement.selectedIndex = activeIndex;
+      // 加载活动配置到输入框
+      const activeProfile = activeIndex !== -1 ? profiles[activeIndex] : null;
+      loadProfileIntoInputs(activeProfile);
+      ztoolkit.log(`Loaded ${profiles.length} profiles. Active: ${activeProfile?.name || 'None'}`);
+  }
+
+  if (activeIndex !== -1) {
+      selectElement.selectedIndex = activeIndex;
+      ztoolkit.log(`Prefs: Set selectedIndex to ${activeIndex}`);
+  }
+  // 初始时禁用删除按钮（除非有选中的有效配置）
+  updateDeleteButtonState();
+}
+
+const DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant integrated into Zotero. Be concise and focus on academic tasks.";
+
+// --- 新增：将配置方案加载到输入框 ---
+function loadProfileIntoInputs(profile: AIConfigProfile | null) {
+  if (!prefsDocument || !addonRef) return;
+  ztoolkit.log(`Loading profile into inputs: ${profile?.name || 'None/Default'}`);
+
+  const apiKeyInput = prefsDocument.getElementById(`pref-${addonRef}-apiKey`) as HTMLInputElement;
+  const endpointInput = prefsDocument.getElementById(`pref-${addonRef}-apiEndpoint`) as HTMLInputElement;
+  const modelInput = prefsDocument.getElementById(`pref-${addonRef}-modelName`) as HTMLInputElement;
+  const tempInput = prefsDocument.getElementById(`pref-${addonRef}-temperature`) as HTMLInputElement;
+  const promptInput = prefsDocument.getElementById(`pref-${addonRef}-systemPrompt`) as HTMLTextAreaElement;
+
+  if (!apiKeyInput || !endpointInput || !modelInput || !tempInput || !promptInput) {
+      ztoolkit.log("ERROR: One or more input elements not found for loading profile.");
+      return;
+  }
+
+  apiKeyInput.value = profile?.apiKey || "";
+  endpointInput.value = profile?.apiEndpoint || "";
+  modelInput.value = profile?.modelName || "";
+  promptInput.value = profile?.systemPrompt || DEFAULT_SYSTEM_PROMPT;
+
+  // 处理温度 (从 int*10 转为 float 显示)
+  const tempInt = profile?.temperature;
+  let tempFloat = 0.7; // 默认值
+  if (typeof tempInt === 'number' && Number.isInteger(tempInt)) {
+      const calculatedFloat = tempInt / 10.0;
+      if (calculatedFloat >= 0 && calculatedFloat <= 2) {
+          tempFloat = calculatedFloat;
+      }
+  }
+  tempInput.value = tempFloat.toFixed(1); // 显示一位小数
+
+  ztoolkit.log("Inputs populated with profile data.");
+}
+
+// --- 新增：处理下拉菜单选择变化 ---
+export function handleProfileSelectChange(selectedName: string) {
+  if (!prefsDocument || !prefsWindow) return;
+  ztoolkit.log(`Profile selection changed: ${selectedName}`);
+
+  const profile = getAIConfigByName(selectedName);
+  if (profile) {
+      loadProfileIntoInputs(profile);
+      const profilesData = getAIConfigProfiles();
+      profilesData.activeProfileName = selectedName;
+      saveAIConfigProfiles(profilesData);
+      ztoolkit.log(`Set "${selectedName}" as active profile.`);
+  } else {
+      ztoolkit.log(`WARN: Selected profile "${selectedName}" not found.`);
+      loadProfileIntoInputs(null);
+      const profilesData = getAIConfigProfiles();
+      profilesData.activeProfileName = undefined;
+      saveAIConfigProfiles(profilesData);
+  }
+  updateDeleteButtonState();
+}
+
+// --- 新增：处理保存当前配置按钮点击 ---
+export function handleSaveCurrentProfile() {
+  if (!prefsDocument || !prefsWindow || !addonRef) return;
+  ztoolkit.log("Save Current Profile button clicked.");
+
+  // 1. 从输入框读取当前值
+  const apiKey = (prefsDocument.getElementById(`pref-${addonRef}-apiKey`) as HTMLInputElement).value;
+  const apiEndpoint = (prefsDocument.getElementById(`pref-${addonRef}-apiEndpoint`) as HTMLInputElement).value;
+  const modelName = (prefsDocument.getElementById(`pref-${addonRef}-modelName`) as HTMLInputElement).value;
+  const systemPrompt = (prefsDocument.getElementById(`pref-${addonRef}-systemPrompt`) as HTMLTextAreaElement).value;
+
+  // 读取并转换温度
+  const tempInput = prefsDocument.getElementById(`pref-${addonRef}-temperature`) as HTMLInputElement;
+  let temperatureInt = 7; // 默认 int*10
+  try {
+      const tempFloat = parseFloat(tempInput.value);
+      if (!isNaN(tempFloat) && tempFloat >= 0 && tempFloat <= 2) {
+          temperatureInt = Math.round(tempFloat * 10);
+      } else {
+           ztoolkit.log("Invalid temperature input, using default 0.7 (int 7).");
+      }
+  } catch (e) {
+       ztoolkit.log("Error parsing temperature, using default 0.7 (int 7).", e);
+  }
+
+  // 2. 提示用户输入配置名称
+  const profileName = prefsWindow.prompt("请输入配置方案的名称:", "");
+  if (!profileName) {
+      ztoolkit.log("Profile save cancelled by user.");
+      return; // 用户取消
+  }
+
+  // 3. 创建新的配置对象
+  const newProfile: AIConfigProfile = {
+      name: profileName,
+      apiKey,
+      apiEndpoint,
+      modelName,
+      temperature: temperatureInt,
+      systemPrompt
+  };
+
+  // 4. 加载现有配置，添加或更新，然后保存
+  const profilesData = getAIConfigProfiles();
+  const existingIndex = profilesData.profiles.findIndex(p => p.name === profileName);
+
+  if (existingIndex !== -1) {
+      // 更新现有配置
+      if (!prefsWindow.confirm(`配置 "${profileName}" 已存在，是否覆盖？`)) {
+          ztoolkit.log("Profile overwrite cancelled.");
+          return;
+      }
+      profilesData.profiles[existingIndex] = newProfile;
+      ztoolkit.log(`Profile "${profileName}" updated.`);
+  } else {
+      // 添加新配置
+      profilesData.profiles.push(newProfile);
+      ztoolkit.log(`Profile "${profileName}" added.`);
+  }
+
+  // 5. 将新保存/更新的配置设为活动配置
+  profilesData.activeProfileName = profileName;
+
+  // 6. 保存回 Prefs
+  if (saveAIConfigProfiles(profilesData)) {
+      ztoolkit.log("Profiles saved successfully.");
+      // 7. 重新加载下拉菜单
+      loadAndPopulateConfigProfiles();
+      // (可选) 显示成功提示
+      prefsWindow.alert(`配置 "${profileName}" 已保存并设为活动配置。`);
+  } else {
+      ztoolkit.log("ERROR: Failed to save profiles.");
+      prefsWindow.alert("保存配置失败，请查看 Zotero 错误日志。");
+  }
+}
+
+// --- 新增：处理删除选中配置按钮点击 ---
+export function handleDeleteSelectedProfile() {
+  if (!prefsDocument || !prefsWindow) return;
+  ztoolkit.log("Delete Selected Profile button clicked.");
+
+  const selectElement = prefsDocument.getElementById("ai-config-profile-select") as XUL.MenuList;
+  if (!selectElement || selectElement.selectedItem === null) {
+       ztoolkit.log("No profile selected for deletion.");
+       return;
+  }
+  const selectedName = selectElement.value; // 获取选中的值 (名称)
+
+  if (!selectedName) {
+      ztoolkit.log("Cannot delete empty selection.");
+      return;
+  }
+
+  // 确认删除
+  if (!prefsWindow.confirm(`确定要删除配置 "${selectedName}" 吗？此操作无法撤销。`)) {
+      ztoolkit.log("Profile deletion cancelled.");
+      return;
+  }
+
+  // 加载配置，过滤掉要删除的，然后保存
+  const profilesData = getAIConfigProfiles();
+  const initialLength = profilesData.profiles.length;
+  profilesData.profiles = profilesData.profiles.filter(p => p.name !== selectedName);
+
+  if (profilesData.profiles.length < initialLength) {
+      ztoolkit.log(`Profile "${selectedName}" removed.`);
+      // 如果删除的是活动配置，清除活动名称或设为第一个
+      if (profilesData.activeProfileName === selectedName) {
+          profilesData.activeProfileName = profilesData.profiles.length > 0 ? profilesData.profiles[0].name : undefined;
+          ztoolkit.log(`Deleted profile was active. New active profile: ${profilesData.activeProfileName || 'None'}`);
+      }
+
+      // 保存回 Prefs
+      if (saveAIConfigProfiles(profilesData)) {
+          ztoolkit.log("Profiles saved after deletion.");
+          // 重新加载下拉菜单和输入框
+          loadAndPopulateConfigProfiles();
+          prefsWindow.alert(`配置 "${selectedName}" 已删除。`);
+      } else {
+          ztoolkit.log("ERROR: Failed to save profiles after deletion.");
+          prefsWindow.alert("删除配置失败，请查看 Zotero 错误日志。");
+      }
+  } else {
+      ztoolkit.log(`WARN: Profile "${selectedName}" not found for deletion.`);
+  }
+}
+
+// --- 新增：更新删除按钮的禁用状态 ---
+function updateDeleteButtonState() {
+  if (!prefsDocument) return;
+  const deleteButton = prefsDocument.getElementById("delete-config-profile-button") as HTMLButtonElement; // XUL button 也可以
+  // *** 修改：获取 html:select ***
+  const selectElement = prefsDocument.getElementById("ai-config-profile-select") as HTMLSelectElement;
+  // *** 结束修改 ***
+  if (deleteButton && selectElement) {
+      deleteButton.disabled = !selectElement.value;
+  }
+}
+
+// --- 新增：设置输入框监听器 (可选，用于实时反馈或验证) ---
+function setupInputListeners() {
+  if (!prefsDocument || !addonRef) return;
+  // 示例：监听 API Key 输入
+  // const apiKeyInput = prefsDocument.getElementById(`pref-${addonRef}-apiKey`) as HTMLInputElement;
+  // apiKeyInput?.addEventListener('input', (event) => {
+  //     const currentValue = (event.target as HTMLInputElement).value;
+  //     // 可以在这里做一些实时验证或提示
+  //     ztoolkit.log(`API Key input changed: ${currentValue}`);
+  // });
+  // 可以为其他输入框添加类似监听器
+}
+
+// --- 在 onPrefsEvent 中添加新的 case ---
+// (需要修改 hooks.ts 中的 onPrefsEvent 调用)
+export function handlePrefsEvent(type: string, data: { window: Window, [key: string]: any }) {
+  ztoolkit.log("handlePrefsEvent triggered", type, data);
+  prefsWindow = data.window; // 确保 window 对象被设置
+  prefsDocument = data.window.document;
+  addonRef = addon.data.config.addonRef;
+
+  switch (type) {
+    case "load":
+        ztoolkit.log("Preferences window loaded");
+        registerPrefsScripts(data.window);
+        break;
+    case "profileSelectChange": // 事件名不变，来自 onchange
+        ztoolkit.log("Profile select change event triggered");
+        if (data.selectedName !== undefined) {
+            handleProfileSelectChange(data.selectedName);
+        } else {
+            ztoolkit.log("WARN: profileSelectChange event missing selectedName.");
+        }
+        break;
+    case "saveCurrentProfile":
+      ztoolkit.log("Save current profile event triggered");
+      handleSaveCurrentProfile();
+      break;
+    case "deleteSelectedProfile":
+      ztoolkit.log("Delete selected profile event triggered");
+      handleDeleteSelectedProfile();
+      break;
+    case "addButton": // 自定义按钮相关，保持
+      ztoolkit.log("Add button event triggered");
+      addButton();
+      break;
+    case "saveButtons": // 自定义按钮相关，保持
+      ztoolkit.log("Save buttons event triggered");
+      saveButtons();
+      break;
+    default:
+      ztoolkit.log(`Unknown preference event type: ${type}`);
+  }
+}
+
+/*async function updatePrefsUI() {
   // You can initialize some UI elements on prefs window
   // with addon.data.prefs.window.document
   // Or bind some events to the elements
@@ -114,10 +453,10 @@ async function updatePrefsUI() {
     });
   await renderLock.promise;
   ztoolkit.log("Preference table rendered!");
-}
+}*/
 
 // 设置温度控制
-function setupTemperatureControl() {
+/*function setupTemperatureControl() {
   if (!addon.data.prefs?.window) {
     ztoolkit.log("ERROR: prefs window not available for temperature control");
     return;
@@ -196,9 +535,9 @@ function setupTemperatureControl() {
   });
   
   ztoolkit.log("Temperature control setup completed");
-}
+}*/
 
-function bindPrefEvents() {
+/*function bindPrefEvents() {
   addon.data
     .prefs!.window.document?.querySelector(
       `#zotero-prefpane-${config.addonRef}-enable`,
@@ -220,18 +559,18 @@ function bindPrefEvents() {
         `Successfully changed to ${(e.target as HTMLInputElement).value}!`,
       );
     });
-}
+}*/
 
 // 加载按钮配置
 function ButtonsConfig() {
   ztoolkit.log("Loading buttons configuration...");
   
-  if (!addon.data.prefs?.window) {
+  if (!prefsWindow) { // <--- 修改这里
     ztoolkit.log("ERROR: prefs window not available for loading buttons");
     return;
   }
-  
-  const doc = addon.data.prefs.window.document;
+
+  const doc = prefsWindow.document; // <--- 可以直接用 prefsWindow.document
   if (!doc) {
     ztoolkit.log("ERROR: prefs document not available for loading buttons");
     return;
@@ -378,12 +717,12 @@ function createButtonRow(doc: Document, button: ButtonConfig, index: number): HT
 export function saveButtons() {
   ztoolkit.log("Saving buttons configuration...");
   
-  if (!addon.data.prefs?.window) {
+  if (!prefsWindow) { // <--- 修改这里
     ztoolkit.log("ERROR: prefs window not available for saving buttons");
     return;
   }
-  
-  const doc = addon.data.prefs.window.document;
+
+  const doc = prefsWindow.document;
   if (!doc) {
     ztoolkit.log("ERROR: prefs document not available for saving buttons");
     return;
@@ -446,12 +785,12 @@ export function saveButtons() {
 export function addButton() {
   ztoolkit.log("Adding new button...");
   
-  if (!addon.data.prefs?.window) {
+  if (!prefsWindow) { // <--- 修改这里
     ztoolkit.log("ERROR: prefs window not available for adding button");
     return;
   }
   
-  const doc = addon.data.prefs.window.document;
+  const doc = prefsWindow.document;
   if (!doc) {
     ztoolkit.log("ERROR: prefs document not available for adding button");
     return;
