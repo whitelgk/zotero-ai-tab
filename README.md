@@ -15,7 +15,7 @@
  - api密钥=api-key
 
  - api端点=api-url
-   - url需要完整的带上/chat/completions，不能是https://api.openai.com/v1这种
+   - 必须是openai兼容格式，url需要完整的带上/chat/completions，不能是https://api.openai.com/v1这种
    - 比如Deepseek官方需要填写https://api.deepseek.com/v1/chat/completions或者https://api.deepseek.com/chat/completions
    - 比如阿里云百炼大模型平台需要填写https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
    - 具体填什么，请参考所用大模型的提供商的调用文档
