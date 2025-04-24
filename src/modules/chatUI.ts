@@ -5,6 +5,7 @@
  */
 export interface ChatUIElements {
     optionsBarContainer: HTMLDivElement; // <--- 新增
+    profileSelectElement: HTMLSelectElement; 
     chatContainer: HTMLDivElement;
     chatInput: HTMLTextAreaElement;
     sendButton: HTMLButtonElement;
@@ -41,6 +42,19 @@ export function createChatInterface(parentElement: HTMLElement): ChatUIElements 
     optionsBarContainer.style.alignItems = "center"; // <--- 添加此行，垂直居中对齐
     optionsBarContainer.style.position = "relative"; // <--- 添加此行，为内部绝对定位的弹窗提供基准
     parentElement.appendChild(optionsBarContainer); // 添加到顶部
+
+    // +++ 修改：创建 html:select +++
+    const profileSelectElement = doc.createElement("select") as HTMLSelectElement; // 创建 select
+    profileSelectElement.id = "sidebar-config-profile-select";
+    profileSelectElement.style.marginRight = "8px";
+    // 添加一个加载中的占位符 option
+    const loadingItem = doc.createElement("option") as HTMLOptionElement; // 创建 option
+    loadingItem.textContent = "AI..."; // 使用 textContent
+    loadingItem.value = "";
+    loadingItem.disabled = true;
+    profileSelectElement.appendChild(loadingItem); // 直接添加到 select
+    optionsBarContainer.appendChild(profileSelectElement);
+    // +++ 结束修改 +++
 
     // 创建聊天显示区域
     const chatContainer = doc.createElement("div");
@@ -110,6 +124,7 @@ export function createChatInterface(parentElement: HTMLElement): ChatUIElements 
     // 返回元素引用
     return {
         optionsBarContainer, // <--- 返回引用
+        profileSelectElement, // 返回 select 引用
         chatContainer,
         chatInput,
         sendButton,
