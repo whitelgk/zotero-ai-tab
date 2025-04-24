@@ -1,10 +1,10 @@
 {
-  "name": "zotero-aichat-tab",
+  "name": "zotero-plugin-template",
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "卿年",
   "description": "在 Zotero 的侧边栏与 AI 对话",
-  "homepage": "https://github.com/whiteofalien",
+  "homepage": "https://github.com/whiteofalien/zotero-ai-tab/releases",
   "config": {
     "addonName": "Zotero AI Chat Tab",
     "addonID": "ai-chat-tab@yourdomain.com",
@@ -14,12 +14,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/whiteofalien/zotero-ai-tab"
+    "url": "git+https://github.com/windingwind/zotero-plugin-template.git"
   },
   "bugs": {
     "url": "https://github.com/whiteofalien/zotero-ai-tab/issues"
   },
-  "license": "GPL-3.0-or-later",
+  "license": "AGPL-3.0-or-later",
   "scripts": {
     "start": "zotero-plugin serve",
     "build": "zotero-plugin build && tsc --noEmit",
