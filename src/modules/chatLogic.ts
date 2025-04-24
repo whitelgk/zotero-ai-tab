@@ -1,13 +1,21 @@
 // src/modules/chatLogic.ts
 import { ChatUIElements, addMessageToDisplay, showThinkingIndicator, updateInputState } from "./chatUI"; // 导入 UI 更新函数
 import * as llmService from "./llmService"; // 导入 LLM 服务
-import { AIChatConfig, getPref, setPref } from "../utils/prefs"; // 导入 AI 配置类型
+import {
+    ActiveAIConfig, // 导入活动配置类型
+    getActiveAIConfig, // 导入获取活动配置的函数
+    getAIConfigProfiles, // 获取所有配置
+    saveAIConfigProfiles, // 保存配置（用于更新 activeProfileName）
+    getAIConfigByName, // 根据名称获取配置
+    AIConfigProfile // 导入配置类型
+} from "../utils/prefs"; // 导入 AI 配置类型
+import { getPref, setPref } from "../utils/prefs"; // 用于获取首选项
 import * as textUtils from "../utils/textUtils"; // 导入文本工具
 import * as chatHistoryStorage from "../utils/chatHistoryStorage"; // <--- 引入存储模块
 
 // --- 模块级状态变量 ---
 let currentUIElements: ChatUIElements | null = null; // 当前激活的 UI 元素引用
-let currentConfig: AIChatConfig | null = null; // 当前使用的 AI 配置
+let currentConfig: ActiveAIConfig | null = null; // 使用新的类型
 let currentSessionId: string | null = null; // <--- 当前会话 ID
 let isSending = false; // 防止重复发送的状态标志
 const LAST_SESSION_ID_KEY = "lastUsedSessionId"; // Pref key for last session
@@ -17,11 +25,27 @@ const LAST_SESSION_ID_KEY = "lastUsedSessionId"; // Pref key for last session
  * @param uiElements - ChatUI 模块创建的 UI 元素引用
  * @param config - 当前的 AI 配置
  */
-export function initChat(uiElements: ChatUIElements, config: AIChatConfig) {
+export function initChat(uiElements: ChatUIElements) {
     ztoolkit.log("ChatLogic: Initializing chat logic...");
     currentUIElements = uiElements;
-    currentConfig = config;
     isSending = false; // 重置发送状态
+
+    // --- 新增：获取当前活动的 AI 配置 ---
+    try {
+        currentConfig = getActiveAIConfig(); // 在内部获取活动配置
+        ztoolkit.log("ChatLogic: Initial active AI config loaded:", currentConfig ? 'OK' : 'Failed');
+        if (!currentConfig) {
+             // 处理无法加载配置的情况，可能显示错误或使用默认值
+             addMessageToDisplay(uiElements.chatContainer, "error", "无法加载 AI 配置，请检查偏好设置。");
+             // 可以阻止后续初始化或使用一个安全的默认配置
+             return;
+        }
+    } catch (e) {
+        ztoolkit.log("ERROR: ChatLogic init - Failed to get active AI config:", e);
+        addMessageToDisplay(uiElements.chatContainer, "error", `加载 AI 配置时出错: ${e instanceof Error ? e.message : String(e)}`);
+        return;
+    }
+    // --- 结束新增 ---
 
     // 确保元素存在
     if (!currentUIElements || !currentUIElements.sendButton || !currentUIElements.chatInput) {
@@ -74,6 +98,13 @@ export function initChat(uiElements: ChatUIElements, config: AIChatConfig) {
     // chatInput.removeEventListener("keypress", handleInputKeyPress); // 先移除 (需要将处理函数提取出来)
     // chatInput.addEventListener("keypress", handleInputKeyPress); // 再添加
 
+    // --- 新增：填充并绑定侧边栏配置下拉菜单 ---
+    loadAndPopulateSidebarProfiles(uiElements.profileSelectElement);
+    uiElements.profileSelectElement.addEventListener('change', handleSidebarProfileChange); // 使用 command 事件 for menulist
+    // 如果使用 html:select, 用 'change' 事件:
+    // currentUIElements.profileSelectElement.addEventListener('change', handleSidebarProfileChange);
+    // --- 结束新增 ---
+
     // --- 3. 渲染顶部选项栏 ---
     renderOptionsBar(); // 调用新函数来创建按钮
 
@@ -120,6 +151,99 @@ function loadAndDisplayHistory(sessionId: string) {
     ztoolkit.log(`ChatLogic: Displayed ${history.length} messages for session ${sessionId}`);
 }
 
+// --- 新增：填充侧边栏配置下拉菜单 ---
+function loadAndPopulateSidebarProfiles(selectElement: HTMLSelectElement) { // 类型改为 HTMLSelectElement
+    if (!selectElement) {
+        ztoolkit.log("Sidebar select element is not a menulist or not found.");
+        return;
+    }
+    ztoolkit.log("ChatLogic: Populating sidebar profile select...");
+
+    const doc = selectElement.ownerDocument;
+    if (!doc) {
+         ztoolkit.log("ERROR: Sidebar document not found.");
+         return;
+    }
+
+    selectElement.options.length = 0; // 清空 select
+
+    const profilesData = getAIConfigProfiles();
+    const profiles = profilesData.profiles;
+    const activeProfileName = profilesData.activeProfileName;
+    let activeIndex = -1;
+
+    if (profiles.length === 0) {
+        const item = doc.createElement("option") as HTMLOptionElement;
+        item.textContent = "无配置";
+        item.value = "";
+        item.disabled = true;
+        selectElement.appendChild(item);
+        activeIndex = 0;
+    } else {
+        profiles.forEach((profile, index) => {
+            const item = doc.createElement("option") as HTMLOptionElement;
+            item.textContent = profile.name;
+            item.value = profile.name;
+            selectElement.appendChild(item);
+            if (profile.name === activeProfileName) {
+                activeIndex = index;
+            }
+        });
+        if (activeIndex === -1 && profiles.length > 0) {
+            activeIndex = 0;
+        }
+    }
+
+    // --- 设置选中状态 (使用 setTimeout) ---
+    if (activeIndex !== -1) {
+        selectElement.selectedIndex = activeIndex;
+        ztoolkit.log(`Sidebar: Set selectedIndex to ${activeIndex}`);
+    }
+    
+    ztoolkit.log(`ChatLogic: Sidebar profile select populated. Active index: ${'selectedIndex' in selectElement ? selectElement.selectedIndex : 'N/A'}`);
+}
+
+// --- 新增：处理侧边栏配置切换 ---
+function handleSidebarProfileChange(event: Event) {
+    const selectElement = event.target as HTMLSelectElement;
+    const selectedName = selectElement.value;
+    ztoolkit.log(`ChatLogic: Sidebar profile changed to: ${selectedName}`);
+
+    if (!selectedName) return; // 忽略空选项
+
+    const newProfileData = getAIConfigByName(selectedName); // 获取完整配置 (temp 是 int*10)
+
+    if (newProfileData && currentUIElements) {
+        // 更新活动配置名称并保存
+        const profilesData = getAIConfigProfiles();
+        profilesData.activeProfileName = selectedName;
+        if (saveAIConfigProfiles(profilesData)) {
+             ztoolkit.log(`ChatLogic: Active profile name saved: ${selectedName}`);
+            // 重新获取处理后的活动配置 (包含转换后的 temp float)
+            currentConfig = getActiveAIConfig();
+            if (currentConfig) {
+                ztoolkit.log(`ChatLogic: currentConfig updated successfully for ${selectedName}.`);
+                // (可选) 给用户一个提示，比如短暂改变按钮文本或添加一条系统消息
+                addMessageToDisplay(currentUIElements.chatContainer, "assistant", `已切换到 AI 配置: ${selectedName}`);
+            } else {
+                 ztoolkit.log(`ERROR: ChatLogic - Failed to reload active config after switching to ${selectedName}.`);
+                 addMessageToDisplay(currentUIElements.chatContainer, "error", `切换到配置 "${selectedName}" 后加载失败。`);
+            }
+        } else {
+             ztoolkit.log(`ERROR: ChatLogic - Failed to save active profile name ${selectedName}.`);
+             addMessageToDisplay(currentUIElements.chatContainer, "error", `保存活动配置 "${selectedName}" 失败。`);
+             // 恢复下拉菜单到切换前的状态？（可选）
+             if ('selectedIndex' in selectElement && currentConfig) {
+                 const oldProfile = getAIConfigProfiles().profiles.find(p => p.apiKey === currentConfig?.apiKey /*或其他唯一标识*/);
+                 if(oldProfile) selectElement.value = oldProfile.name;
+             }
+        }
+    } else {
+         ztoolkit.log(`WARN: ChatLogic - Could not find profile data for selected name: ${selectedName}`);
+         addMessageToDisplay(currentUIElements!.chatContainer, "error", `找不到名为 "${selectedName}" 的配置。`);
+    }
+}
+
 /**
  * 处理发送消息的逻辑
  */
@@ -133,6 +257,9 @@ export async function handleSendMessage() {
     }
     if (isSending || !currentUIElements || !currentConfig || !currentUIElements.chatInput || !currentUIElements.sendButton || !currentUIElements.thinkingIndicator || !currentUIElements.chatContainer) {
         ztoolkit.log("ERROR: ChatLogic handleSendMessage - Missing UI elements or config.");
+        if (!currentConfig && currentUIElements) {
+            addMessageToDisplay(currentUIElements.chatContainer, "error", "无法发送消息：AI 配置未加载。");
+        }
         return;
     }
 
@@ -186,7 +313,7 @@ export async function handleSendMessage() {
 
     try {
         ztoolkit.log("ChatLogic: Calling llmService.getCompletion...");
-        aiResponse = await llmService.getCompletion(messagesToSend); // 调用 LLM 服务
+        aiResponse = await llmService.getCompletion(messagesToSend);
         ztoolkit.log("ChatLogic: llmService.getCompletion finished.");
     } catch (error: any) {
         requestError = error;
@@ -288,8 +415,19 @@ function renderOptionsBar() {
 
     const container = currentUIElements.optionsBarContainer;
     // 清空旧内容
-    while (container.firstChild) { container.removeChild(container.firstChild); }
-    ztoolkit.log("ChatLogic: Rendering options bar...");
+    const profileSelect = container.querySelector("#sidebar-config-profile-select");
+    while (container.firstChild && container.firstChild !== profileSelect) {
+         container.removeChild(container.firstChild);
+    }
+     while (container.lastChild && container.lastChild !== profileSelect) {
+         container.removeChild(container.lastChild);
+    }
+    ztoolkit.log("ChatLogic: Rendering options bar (New Chat, History)...");
+
+    // --- 确保 profileSelect 在最左边 (如果它不在) ---
+    if (profileSelect && container.firstChild !== profileSelect) {
+        container.insertBefore(profileSelect, container.firstChild);
+    }
 
     // 1. 新增对话按钮
     const newChatButton = doc.createElement("button");
