@@ -623,11 +623,11 @@ function createHistoryItemElement(doc: Document, sessionId: string): HTMLElement
 
 
 let historyPopup: HTMLDivElement | null = null; // 用于存储弹窗元素的引用
-
+let clickOutsideHandler: ((event: MouseEvent) => void) | null = null;
 function toggleHistoryPopup(anchorButton: HTMLButtonElement) {
     ztoolkit.log("toggleHistoryPopup: Function called."); // 日志 1
-    if (!currentUIElements || !currentUIElements.optionsBarContainer) {
-        ztoolkit.log("ERROR: toggleHistoryPopup - UI elements not available."); // 日志 2
+    if (!currentUIElements || !currentUIElements.optionsBarContainer || !currentUIElements.profileSelectElement) {
+        ztoolkit.log("ERROR: toggleHistoryPopup - UI elements (optionsBarContainer or profileSelectElement) not available."); // 日志 2
         return;
    }
     const doc = currentUIElements.optionsBarContainer.ownerDocument;
@@ -641,7 +641,11 @@ function toggleHistoryPopup(anchorButton: HTMLButtonElement) {
         ztoolkit.log("toggleHistoryPopup: Popup exists, removing it."); // 日志 4
         historyPopup.parentNode.removeChild(historyPopup);
         historyPopup = null;
-        doc.removeEventListener("click", clickOutsideHandler, true);
+        if (clickOutsideHandler) {
+            doc.removeEventListener("click", clickOutsideHandler, true);
+            clickOutsideHandler = null; // 清理引用
+            ztoolkit.log("toggleHistoryPopup: Removed clickOutsideHandler.");
+        }
         return;
     }
     ztoolkit.log("toggleHistoryPopup: Creating new popup."); // 日志 5
@@ -662,23 +666,31 @@ function toggleHistoryPopup(anchorButton: HTMLButtonElement) {
 
     // 定位弹窗 (示例：在按钮下方)
     try {
-        // --- 修改：计算相对于 optionsBarContainer 的位置 ---
-        // 我们需要 optionsBarContainer 是一个 positioned ancestor (relative, absolute, fixed, sticky)
-        // 如果 optionsBarContainer 本身没有设置 position，absolute 定位会相对于 body 或更上层。
-        // 为确保准确，可以给 optionsBarContainer 添加 position: relative (如果它还没有)
-        // 在 chatUI.ts 中修改 optionsBarContainer.style.position = "relative"; (如果需要)
-        const buttonTopRelativeToContainer = anchorButton.offsetTop; // 按钮顶部相对于父元素的位置
-        const buttonHeight = anchorButton.offsetHeight; // 按钮的高度
-        const buttonLeftRelativeToContainer = anchorButton.offsetLeft; // 按钮左侧相对于父元素的位置
+        const profileSelect = currentUIElements.profileSelectElement; // 获取切换 AI 的下拉菜单
+        const container = currentUIElements.optionsBarContainer; // 父容器
 
-        historyPopup.style.top = `${buttonTopRelativeToContainer + buttonHeight + 2}px`; // 在按钮正下方
-        historyPopup.style.left = `${buttonLeftRelativeToContainer}px`; // 与按钮左侧对齐
-        // --- 结束修改 ---
-        ztoolkit.log(`toggleHistoryPopup: Popup position set (fixed) - top: ${historyPopup.style.top}, left: ${historyPopup.style.left}`); // 日志 6
+        // 确保父容器有相对定位基准
+        if (container.style.position !== 'relative' && container.style.position !== 'absolute' && container.style.position !== 'fixed' && container.style.position !== 'sticky') {
+            ztoolkit.log("Warning: optionsBarContainer might need 'position: relative' for absolute positioning of popup.");
+            container.style.position = "relative"; // 强制设置
+        }
+
+        // 计算 profileSelect 相对于 container 的位置
+        const selectTopRelativeToContainer = profileSelect.offsetTop;
+        const selectHeight = profileSelect.offsetHeight;
+        const selectLeftRelativeToContainer = profileSelect.offsetLeft;
+
+        historyPopup.style.position = "absolute"; // 确保是 absolute
+        historyPopup.style.top = `${selectTopRelativeToContainer + selectHeight + 2}px`; // 在下拉菜单正下方
+        historyPopup.style.left = `${selectLeftRelativeToContainer}px`; // 与下拉菜单左侧对齐
+        // (可选) 如果希望菜单稍微宽一点或窄一点，可以在这里设置 minWidth 或 width
+        // historyPopup.style.minWidth = `${profileSelect.offsetWidth}px`; // 例如，和下拉菜单一样宽
+
+        ztoolkit.log(`toggleHistoryPopup: Popup position set based on profileSelect - top: ${historyPopup.style.top}, left: ${historyPopup.style.left}`);
     } catch (e) {
-         ztoolkit.log("ERROR: toggleHistoryPopup - Error calculating popup position:", e); // 日志 7
-         historyPopup = null;
-         return;
+        ztoolkit.log("ERROR: toggleHistoryPopup - Error calculating popup position based on profileSelect:", e);
+        historyPopup = null;
+        return;
     }
 
     // 获取并填充历史记录
@@ -705,37 +717,38 @@ function toggleHistoryPopup(anchorButton: HTMLButtonElement) {
 
     // 将弹窗添加到选项栏容器中（或其他合适的父元素）
     try {
-        // --- 修改：添加回 optionsBarContainer ---
-        // 确保 optionsBarContainer 有 position: relative 或 absolute 等，以便 absolute 定位的子元素正确显示
-        if (currentUIElements.optionsBarContainer.style.position !== 'relative' && currentUIElements.optionsBarContainer.style.position !== 'absolute' && currentUIElements.optionsBarContainer.style.position !== 'fixed' && currentUIElements.optionsBarContainer.style.position !== 'sticky') {
-            ztoolkit.log("Warning: optionsBarContainer might need 'position: relative' for absolute positioning of popup.");
-            // 可以考虑在这里动态添加，但不推荐，最好在 chatUI.ts 中设置好
-            // currentUIElements.optionsBarContainer.style.position = "relative";
-       }
-       currentUIElements.optionsBarContainer.appendChild(historyPopup);
-        // --- 结束修改 ---
-        ztoolkit.log("toggleHistoryPopup: Popup appended to document body."); // 日志 10
+        currentUIElements.optionsBarContainer.appendChild(historyPopup);
+        ztoolkit.log("toggleHistoryPopup: Popup appended to optionsBarContainer.");
     } catch (e) {
-         ztoolkit.log("ERROR: toggleHistoryPopup - Error appending popup to DOM:", e); // 日志 11
-         historyPopup = null;
-         return;
+        ztoolkit.log("ERROR: toggleHistoryPopup - Error appending popup to DOM:", e);
+        historyPopup = null;
+        return;
     }
 
     // (可选) 添加点击外部关闭弹窗的逻辑
-    const clickOutsideHandler = (event: MouseEvent) => {
+    clickOutsideHandler = (event: MouseEvent) => {
+        // --- 修改：检查点击目标是否在弹窗内 或 是否是“历史记录”按钮本身 ---
         if (historyPopup && !historyPopup.contains(event.target as Node) && event.target !== anchorButton) {
+        // --- 结束修改 ---
             ztoolkit.log("toggleHistoryPopup: Click outside detected, removing popup.");
             if (historyPopup.parentNode) {
                 historyPopup.parentNode.removeChild(historyPopup);
             }
             historyPopup = null;
-            doc.removeEventListener("click", clickOutsideHandler, true); // 移除监听器
+            // 移除监听器
+            if (clickOutsideHandler) { // 再次检查以防万一
+                 doc.removeEventListener("click", clickOutsideHandler, true);
+                 clickOutsideHandler = null; // 清理引用
+                 ztoolkit.log("toggleHistoryPopup: Removed clickOutsideHandler from inside handler.");
+            }
         }
     };
-    // 使用 setTimeout 确保当前点击事件结束后再添加监听器
+
     setTimeout(() => {
-        doc.addEventListener("click", clickOutsideHandler, true);
-        ztoolkit.log("toggleHistoryPopup: clickOutsideHandler added."); // 日志 12s
+        if (clickOutsideHandler) { // 确保处理函数仍然存在
+            doc.addEventListener("click", clickOutsideHandler, true);
+            ztoolkit.log("toggleHistoryPopup: clickOutsideHandler added.");
+        }
     }, 0);
 }
 
