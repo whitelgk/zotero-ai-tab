@@ -2,6 +2,7 @@ import { getString, initLocale, getLocaleID } from "./utils/locale"; // 添加 g
 import { registerPrefsScripts, addButton, saveButtons } from "./modules/preferenceScript";
 import { createZToolkit } from "./utils/ztoolkit";
 import * as reader from "./modules/reader"; // <--- 导入新的 reader 模块
+import { handlePrefsEvent } from "./modules/preferenceScript"; // 导入新的事件处理器
 
 async function onStartup() {
   // --- 在 await 之前添加日志 ---
@@ -119,9 +120,10 @@ async function onNotify(
 /**
  * 处理首选项 UI 事件
  */
-export function onPrefsEvent(type: string, data: { [key: string]: any }) {
+export function onPrefsEvent(type: string, data: { window: Window, [key: string]: any }) {
   ztoolkit.log("onPrefsEvent triggered", type, data);
-  switch (type) {
+  handlePrefsEvent(type, data);
+  /*switch (type) {
     case "load":
       ztoolkit.log("Preferences window loaded");
       registerPrefsScripts(data.window);
@@ -136,7 +138,7 @@ export function onPrefsEvent(type: string, data: { [key: string]: any }) {
       break;
     default:
       ztoolkit.log(`Unknown preference event type: ${type}`);
-  }
+  }*/
 }
 
 // 新的事件处理函数：保存放大后的整数
