@@ -14,11 +14,11 @@ class Addon {
     locale?: {
       current: any;
     };
-    prefs?: {
+    /*prefs?: {
       window: Window;
       columns: Array<ColumnOptions>;
       rows: Array<{ [dataKey: string]: string }>;
-    };
+    };*/
     dialog?: DialogHelper;
   };
   public hooks: typeof hooks;
@@ -27,7 +27,7 @@ class Addon {
     getPref: typeof prefsUtils.getPref;
     setPref: typeof prefsUtils.setPref;
     clearPref: typeof prefsUtils.clearPref;
-    getAIChatConfig: typeof prefsUtils.getAIChatConfig;
+    getActiveAIConfig: typeof prefsUtils.getActiveAIConfig;
   };
 
   constructor() {
@@ -44,7 +44,7 @@ class Addon {
       getPref: prefsUtils.getPref,
       setPref: prefsUtils.setPref,
       clearPref: prefsUtils.clearPref,
-      getAIChatConfig: prefsUtils.getAIChatConfig,
+      getActiveAIConfig: prefsUtils.getActiveAIConfig,
     };
     Zotero.debug("Addon.ts: Constructor finished."); // 日志 Addon-End
   }
