@@ -19,6 +19,7 @@ Default Settings Interface：
  - api密钥=api-key
 
  - api端点=api-url
+   - It must be in a format compatible with OpenAI.
    - The URL needs to include '/chat/completions' completely. It cannot be in the form of 'https://api.openai.com/v1'. 
    - For example, the official website of DeepSeek requires you to fill in 'https://api.deepseek.com/v1/chat/completions or https://api.deepseek.com/chat/completions'. 
    - For example, for OpenAI, you need to fill in 'https://api.openai.com/v1/chat/completions'. 
