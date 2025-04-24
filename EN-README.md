@@ -2,6 +2,9 @@
 [![zotero target version](https://img.shields.io/badge/Zotero-7-green?style=flat-square&logo=zotero&logoColor=CC2936)](https://www.zotero.org)
 [![Using Zotero Plugin Template](https://img.shields.io/badge/Using-Zotero%20Plugin%20Template-blue?style=flat-square&logo=github)](https://github.com/windingwind/zotero-plugin-template)
 
+# local
+ - '保存=save',  '添加=add',  '删除=delete',  '按钮=button',  '设置=setting',  '保存当前配置=Save the current configuration',  '删除选中配置=Delete the selected configuration',  '自定义按钮设置=Custom Button Settings',  '添加新按钮=Add a new button',  '保存按钮设置=Save the button setting',  '新增对话=Create a new conversation',  '历史记录=Conversation History'.
+
  - ![image](https://github.com/user-attachments/assets/7d2608ec-1e56-48c8-b129-8449d09e7454)
 
 
@@ -34,7 +37,7 @@ Default Settings Interface：
 
  - Custom Button Settings: In essence, it is a send button with a built-in prompt, and the sentence following it is the prompt. 
    - A little tip: While reading, you can select a paragraph of text and directly drag it into the input box in the sidebar. After dragging it into the input box, you will notice that the text has a Zotero format suffix. You don't need to worry about this. The plugin already has built-in regular expression code for clearing, and you can just click the normal buttons (such as the summarize(总结文本), translate(翻译文本), explain buttons(解释文本), etc.).  
- - local：'保存=save',  '添加=add',  '删除=delete',  '按钮=button'， '设置=setting',  '保存当前配置=Save the current configuration',  '删除选中配置=Delete the selected configuration',  '自定义按钮设置=Custom Button Settings'，  '添加新按钮=Add a new button',  '保存按钮设置=Save the button setting'.
+
 
 # The next phase (Version 1.0.2)
  - Add AI streaming output. At the current stage, it just shows "ai is thinking", and the output process of the AI cannot be seen. (Difficulty: Relatively difficult) 
