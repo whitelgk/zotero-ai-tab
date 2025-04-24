@@ -3,7 +3,7 @@ import { getLocaleID } from "../utils/locale";
 import * as chatUI from "./chatUI"; // 导入 UI 模块
 import * as chatLogic from "./chatLogic"; // 导入逻辑模块
 import * as customButtons from "./customButtons"; // 导入按钮模块
-import { getAIChatConfig } from "../utils/prefs"; // 获取配置
+//import { getAIChatConfig } from "../utils/prefs"; // 获取配置
 
 /**
  * 注册 AI 聊天侧边栏到 Zotero 阅读器
@@ -63,8 +63,8 @@ export function registerReaderSection() {
 
                     // 4. 初始化聊天逻辑 (调用 chatLogic 模块)
                     // initChat 需要 UI 元素引用和 AI 配置
-                    const config = getAIChatConfig(); // 获取配置
-                    chatLogic.initChat(uiElements, config); // 传递 UI 元素和配置
+                    //const config = getAIChatConfig(); // 获取配置
+                    chatLogic.initChat(uiElements); // 传递 UI 元素和配置
                     ztoolkit.log("Reader: onRender - Chat logic initialized by chatLogic.");
 
                     // 5. (可选) 添加初始欢迎消息 (可以移到 chatLogic.initChat 内部)
