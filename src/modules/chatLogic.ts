@@ -88,9 +88,10 @@ export function initChat(uiElements: ChatUIElements) {
     // sendButton.removeEventListener("click", handleSendMessage); // 先移除
     // sendButton.addEventListener("click", handleSendMessage); // 再添加
 
-    chatInput.onkeypress = (e: KeyboardEvent) => { // 直接赋值给 onkeypress
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault();
+    chatInput.onkeypress = (e: Event) => {
+        const keyboardEvent = e as KeyboardEvent; // 类型断言
+        if (keyboardEvent.key === "Enter" && !keyboardEvent.shiftKey) {
+            keyboardEvent.preventDefault();
             handleSendMessage();
         }
     };
@@ -290,6 +291,11 @@ export async function handleSendMessage() {
     currentUIElements.chatInput.value = ""; // 清空输入框
 
     // --- 加载、更新、保存历史记录 ---
+    if (currentSessionId === null) {
+        ztoolkit.log("ERROR: Cannot save message - currentSessionId is null");
+        return;
+    }
+
     let history = chatHistoryStorage.loadChatHistory(currentSessionId); // 1. 加载当前会话历史
     history.push({ role: "user", content: cleanedMessage });          // 2. 添加用户消息
     chatHistoryStorage.saveChatHistory(currentSessionId, history);    // 3. 保存更新后的历史
@@ -623,7 +629,7 @@ function createHistoryItemElement(doc: Document, sessionId: string): HTMLElement
 
 
 let historyPopup: HTMLDivElement | null = null; // 用于存储弹窗元素的引用
-let clickOutsideHandler: ((event: MouseEvent) => void) | null = null;
+let clickOutsideHandler: ((event: Event) => void) | null = null;
 function toggleHistoryPopup(anchorButton: HTMLButtonElement) {
     ztoolkit.log("toggleHistoryPopup: Function called."); // 日志 1
     if (!currentUIElements || !currentUIElements.optionsBarContainer || !currentUIElements.profileSelectElement) {
@@ -726,20 +732,24 @@ function toggleHistoryPopup(anchorButton: HTMLButtonElement) {
     }
 
     // (可选) 添加点击外部关闭弹窗的逻辑
-    clickOutsideHandler = (event: MouseEvent) => {
-        // --- 修改：检查点击目标是否在弹窗内 或 是否是“历史记录”按钮本身 ---
-        if (historyPopup && !historyPopup.contains(event.target as Node) && event.target !== anchorButton) {
-        // --- 结束修改 ---
+    clickOutsideHandler = (event: Event) => { // <--- 参数类型保持为 Event
+        // 直接使用 event.target，不需要检查 instanceof MouseEvent
+        // 因为 MouseEvent is not defined 的错误是在引用 MouseEvent 这个词时发生的
+        if (
+            historyPopup &&
+            event.target && // 确保 event.target 存在
+            !historyPopup.contains(event.target as Node) && // (event.target as Node) 是安全的
+            event.target !== anchorButton
+        ) {
             ztoolkit.log("toggleHistoryPopup: Click outside detected, removing popup.");
             if (historyPopup.parentNode) {
                 historyPopup.parentNode.removeChild(historyPopup);
             }
             historyPopup = null;
-            // 移除监听器
-            if (clickOutsideHandler) { // 再次检查以防万一
-                 doc.removeEventListener("click", clickOutsideHandler, true);
-                 clickOutsideHandler = null; // 清理引用
-                 ztoolkit.log("toggleHistoryPopup: Removed clickOutsideHandler from inside handler.");
+            if (clickOutsideHandler) { // 确保 clickOutsideHandler 仍然是当前的函数引用
+                doc.removeEventListener("click", clickOutsideHandler, true);
+                clickOutsideHandler = null; // 清理引用
+                ztoolkit.log("toggleHistoryPopup: Removed clickOutsideHandler from inside handler.");
             }
         }
     };
