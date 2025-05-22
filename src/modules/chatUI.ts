@@ -66,7 +66,7 @@ export function createChatInterface(parentElement: HTMLElement): ChatUIElements 
     chatContainer.style.marginBottom = "5px";
     chatContainer.style.backgroundColor = "var(--material-background)";
     chatContainer.style.color = "var(--text-color-primary)";
-    chatContainer.style.maxHeight = "calc(100vh - 300px)"; // 保留 maxHeight
+    chatContainer.style.maxHeight = "calc(100vh - 400px)"; // 保留 maxHeight
     chatContainer.style.minHeight = "100px";
     parentElement.appendChild(chatContainer); // 直接添加到父元素
 
@@ -152,7 +152,8 @@ export function addMessageToDisplay(
     messageElement.style.padding = "8px";
     messageElement.style.borderRadius = "4px";
     messageElement.style.maxWidth = "85%";
-    messageElement.style.wordWrap = "break-word"; // 确保长单词换行
+    messageElement.style.overflowWrap = "break-word"; // 确保长单词换行
+    messageElement.style.wordBreak = "break-all";
     messageElement.style.backgroundColor = role === "user" ? "var(--material-toolbar-background)" : (role === 'error' ? 'var(--material-error-background)' : 'var(--material-surface)');
     messageElement.style.textAlign = role === "user" ? "right" : "left";
     messageElement.style.marginLeft = role === 'assistant' || role === 'error' ? '0' : 'auto';
