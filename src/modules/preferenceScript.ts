@@ -104,6 +104,10 @@ async function loadAndPopulateConfigProfiles() {
   } else {
       let activeIndex = 0;
       profiles.forEach((profile, index) => {
+          if (!prefsDocument) {
+              ztoolkit.log("ERROR: prefsDocument is null when creating option element.");
+              return;
+          }
           const item = prefsDocument.createElement("option") as HTMLOptionElement;
           item.textContent = profile.name; // 使用 textContent
           item.value = profile.name;
