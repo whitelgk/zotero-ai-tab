@@ -115,12 +115,18 @@ function handleButtonClick(
     // 优先使用 Zotero 阅读器中选中的文本 (如果当前在阅读器上下文)
     try {
         // 检查是否在 Reader 上下文，并尝试获取选中文本
-        const reader = Zotero.Reader.getByTabID(Zotero_Tabs.selectedID); // 获取当前 Reader 实例
-        if (reader) {
-            const selectedText = reader.getSelectedText(); // 获取选中文本
-            if (selectedText && selectedText.trim()) {
-                textToProcess = selectedText.trim();
-                ztoolkit.log("CustomButtons: Using selected text from reader:", textToProcess);
+        interface ReaderInstance {
+            _window?: Window | null;
+            // 可以继续扩展其他属性，如果需要的话
+        }
+        const reader = Zotero.Reader.openReaders.find((r: ReaderInstance) => 
+            r._window?.document?.hasFocus()
+        ) || null;
+        let selectedText = "";
+        if (reader && reader._iframeWindow) {
+            const selection = reader._iframeWindow.getSelection();
+            if (selection && selection.toString().trim()) {
+                selectedText = selection.toString().trim();
             }
         }
     } catch (e) {
